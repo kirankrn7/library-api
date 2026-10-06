@@ -75,7 +75,7 @@ router.post("/:memberId/return/:bookId", async (req, res) => {
         await book.save();
 
         res.status(200).json({
-            message: "Book returned successfully",
+            message: "Book returned successful",
             book: book
         });
     } catch (error) {
