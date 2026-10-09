@@ -1,12 +1,17 @@
 const express = require("express");
 const Book = require("../models/Book");
 const authMiddleware = require("../middleware/auth");
+const authorizeBook = require("../middleware/authorizeBook");
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
+router.post("/", authMiddleware, async (req, res) => {
     try {
-        const book = new Book(req.body);
+        const book = new Book({
+            ...req.body,
+            owner: req.user.userId
+        });
+
         const savedBook = await book.save();
 
         res.status(201).json(savedBook);
@@ -39,6 +44,22 @@ router.get("/", async (req, res) => {
     }
 });
 
+router.get("/my-books", authMiddleware, async (req, res) => {
+    try {
+        const books = await Book.find({
+            owner: req.user.userId
+        }).populate("author");
+
+        res.status(200).json(books);
+
+    }
+    catch (error) {
+        res.status(500).json({
+            error: error.message
+        });
+    }
+});
+
 router.get("/:id", async (req, res) => {
     try {
         const book = await Book.findById(req.params.id).populate("author");
@@ -53,7 +74,7 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", authMiddleware, authorizeBook, async (req, res) => {
     try {
         const book = await Book.findByIdAndUpdate(
             req.params.id,
@@ -71,7 +92,7 @@ router.put("/:id", async (req, res) => {
     }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authMiddleware, authorizeBook, async (req, res) => {
     try {
         const book = await Book.findByIdAndDelete(req.params.id);
 
